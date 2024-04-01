@@ -1,16 +1,33 @@
 package org.example
 
+import io.ktor.serialization.kotlinx.json.*
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.server.plugins.contentnegotiation.*
+import kotlinx.serialization.json.Json
+import org.example.api.publicationApi
+import org.koin.ktor.plugin.Koin
+
 //TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
 // click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
 fun main() {
-    val name = "Kotlin"
-    //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-    // to see how IntelliJ IDEA suggests fixing it.
-    println("Hello, " + name + "!")
+    embeddedServer(Netty, port = 8080) {
+        configureServer()
+        publicationApi()
+    }.start(wait = true)
+}
 
-    for (i in 1..5) {
-        //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-        // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-        println("i = $i")
+fun Application.configureServer() {
+    install(Koin){
+        modules(publicationsModule)
+    }
+    install(ContentNegotiation) {
+        json(
+            Json {
+                prettyPrint = true
+                ignoreUnknownKeys = true
+            }
+        )
     }
 }
