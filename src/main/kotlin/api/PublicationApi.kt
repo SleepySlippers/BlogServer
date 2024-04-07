@@ -7,7 +7,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.example.api.model.CreatePublicationRequest
 import org.example.api.model.EditPublicationRequest
-import org.example.repository.IPublicationsStorage
+import org.example.storage.PublicationsStorage
 import org.koin.ktor.ext.inject
 
 const val prefix = "/publications"
@@ -15,7 +15,7 @@ const val prefix = "/publications"
 fun Application.publicationApi() {
     routing {
 
-        val publicationsStorage by inject<IPublicationsStorage>()
+        val publicationsStorage by inject<PublicationsStorage>()
 
         get("${prefix}/all") {
             try {

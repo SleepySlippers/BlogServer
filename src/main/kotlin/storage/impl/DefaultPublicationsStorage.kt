@@ -1,24 +1,26 @@
 package org.example.storage.impl
 
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.datetime.Clock
 import org.example.model.Publication
-import org.example.repository.IPublicationsStorage
+import org.example.storage.PublicationsStorage
 import kotlin.random.Random
 
 const val LengthThreshold = 500
 
-class DefaultPublicationsStorage : IPublicationsStorage {
-
-    private val publicatoins: MutableSet<Publication> = mutableSetOf()
+class DefaultPublicationsStorage : PublicationsStorage {
+    private val mutex = Mutex()
+    private val publications: MutableSet<Publication> = mutableSetOf()
     override fun getAll(): Collection<Publication> {
-        return publicatoins.toList()
+        return publications.toList()
     }
 
-    override fun getById(id: Long): Publication? {
-        return publicatoins.find { it.id == id }
+    override suspend fun getById(id: Long): Publication? {
+        return mutex.withLock {  publications.find { it.id == id } }
     }
 
-    override fun createPublication(text: String): Publication? {
+    override suspend fun createPublication(text: String): Publication? {
         if (text.length > LengthThreshold) {
             return null
         }
@@ -29,29 +31,29 @@ class DefaultPublicationsStorage : IPublicationsStorage {
             creationTime = currentTime,
             editTime = currentTime,
         )
-        publicatoins.add(createdPublication)
+        mutex.withLock { publications.add(createdPublication) }
         return createdPublication
     }
 
-    override fun deleteById(id: Long): Publication? {
+    override suspend fun deleteById(id: Long): Publication? {
         val popped = getById(id) ?: return null
-        publicatoins.remove(popped)
+        publications.remove(popped)
         return popped
     }
 
-    override fun editPublication(id: Long, text: String): Publication? {
+    override suspend fun editPublication(id: Long, text: String): Publication? {
         if (text.length > LengthThreshold) {
             return null
         }
-        val previous = deleteById(id) ?: return null
         val currentTime = Clock.System.now()
+        val previous = deleteById(id) ?: return null
         val createdPublication = Publication(
             id = previous.id,
             text = text,
             creationTime = previous.creationTime,
             editTime = currentTime,
         )
-        publicatoins.add(createdPublication)
+        mutex.withLock { publications.add(createdPublication) }
         return createdPublication
     }
 }
